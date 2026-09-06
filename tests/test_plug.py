@@ -225,3 +225,23 @@ def test_an_unsupported_language_yields_no_types_at_all(monkeypatch):
     # the number parser refuses the language and the other three find nothing,
     # so every type is omitted rather than mapped to an empty list
     assert slots == {}
+
+
+def test_construction_omits_empty_types_without_the_validator(monkeypatch):
+    # `_validated` also drops empty-list types (via spec-tools), so this
+    # bypasses it to pin the omission rule in `transform` on its own.
+    monkeypatch.setattr(plug.TypedSlotsTransformer, "_validated",
+                        staticmethod(lambda typed_slots: typed_slots))
+    monkeypatch.setitem(plug._EXTRACTORS, "number", lambda *args, **kwargs: [])
+    monkeypatch.setitem(plug._EXTRACTORS, "color",
+                        lambda *args, **kwargs: [plug._entry(0, 3, "red", "red")])
+    slots = transform(["red"], {"number", "color"})
+    assert set(slots) == {"color"}
+
+
+def test_construction_returns_an_empty_map_without_the_validator(monkeypatch):
+    monkeypatch.setattr(plug.TypedSlotsTransformer, "_validated",
+                        staticmethod(lambda typed_slots: typed_slots))
+    for slot_type in ALL_TYPES:
+        monkeypatch.setitem(plug._EXTRACTORS, slot_type, lambda *args, **kwargs: [])
+    assert transform(["nine red balloons"], ALL_TYPES) == {}
