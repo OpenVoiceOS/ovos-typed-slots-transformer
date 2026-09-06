@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ovos-typed-slots-transformer"
+dynamic = ["version"]
+description = "Typed-slots transformer computing number, date, duration and color slots with the OVOS parsers"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "jarbasai", email = "jarbasai@mailfence.com"}
+]
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Linguistic",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+dependencies = [
+    "ovos-plugin-manager>=2.12.0a1,<3.0.0",
+    "ovos-spec-tools>=1.11.0a1",
+    "ovos-number-parser>=0.20.0a1",
+    "ovos-date-parser>=0.31.0a1",
+    "ovos-color-parser>=0.12.1a1"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov"
+]
+
+[project.urls]
+Homepage = "https://github.com/OpenVoiceOS/ovos-typed-slots-transformer"
+
+[project.entry-points."opm.transformer.typed_slots"]
+"ovos-typed-slots-transformer" = "ovos_typed_slots_transformer:TypedSlotsTransformer"
+
+[tool.setuptools.dynamic]
+version = {attr = "ovos_typed_slots_transformer.version.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ovos_typed_slots_transformer*"]
