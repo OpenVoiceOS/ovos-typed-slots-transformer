@@ -26,7 +26,8 @@ dependencies = [
     "ovos-spec-tools>=1.11.0a1",
     "ovos-number-parser>=0.20.0a1",
     "ovos-date-parser>=0.31.0a1",
-    "ovos-color-parser>=0.12.1a1"
+    "ovos-color-parser>=0.12.1a1",
+    "ovos-lang-parser>=0.8.0a1"
 ]
 
 [project.optional-dependencies]

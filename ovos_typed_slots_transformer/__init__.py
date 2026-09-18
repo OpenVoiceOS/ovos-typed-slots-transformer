@@ -42,9 +42,15 @@ def _colors(utterance: str, lang: str) -> List[Dict[str, Any]]:
             for s in extract_color_spans(utterance, lang)]
 
 
+def _languages(utterance: str, lang: str) -> List[Dict[str, Any]]:
+    from ovos_lang_parser import extract_language
+    return [_entry(e["span"][0], e["span"][1], e["surface"], e["value"])
+            for e in extract_language(utterance, lang)]
+
+
 #: parser call per supported type; `date` is bound to the anchor per transform
-_EXTRACTORS = {"number": _numbers, "date": _dates,
-               "duration": _durations, "color": _colors}
+_EXTRACTORS = {"number": _numbers, "date": _dates, "duration": _durations,
+               "color": _colors, "language": _languages}
 
 
 def _warn_once(key: str, message: str):
@@ -54,8 +60,8 @@ def _warn_once(key: str, message: str):
 
 
 class TypedSlotsTransformer(_TypedSlotsTransformer):
-    """Computes `number`, `date`, `duration` and `color` slots with the OVOS
-    parsers, over every candidate utterance it is handed.
+    """Computes `number`, `date`, `duration`, `color` and `language` slots
+    with the OVOS parsers, over every candidate utterance it is handed.
 
     The spans of an entry index the candidate it was read from; a consumer
     identifies that candidate by the `utterance[start:end] == surface`
@@ -64,9 +70,18 @@ class TypedSlotsTransformer(_TypedSlotsTransformer):
     The map carries only types with at least one entry. A type is absent
     whenever it produced nothing, whether its parser found no such expression,
     is not installed, does not support the session language, or raised.
+
+    `location` and `timezone` (OVOS-INTENT-1 §5.6) are not computed here yet:
+    `location` needs an offline gazetteer of capital cities, countries and
+    regions, matched with `ahocorasick-ner` rather than a regex alternation;
+    `timezone` needs a per-language zone-name/abbreviation table honouring the
+    spec's one-surface-one-zone rule. Both need a data source decided before
+    landing (T-2126); `supported_types` grows to include them once that data
+    ships.
     """
 
-    supported_types: FrozenSet[str] = frozenset({"number", "date", "duration", "color"})
+    supported_types: FrozenSet[str] = frozenset(
+        {"number", "date", "duration", "color", "language"})
 
     def __init__(self, name: str = "ovos-typed-slots-transformer",
                  priority: int = 50, config: Optional[Dict[str, Any]] = None):
@@ -125,7 +140,9 @@ class TypedSlotsTransformer(_TypedSlotsTransformer):
                                                   f"'{slot_type}' slots, the type "
                                                   f"will not be computed")
                 return []
-            except NotImplementedError:
+            except (NotImplementedError, ValueError):
+                # ovos_lang_parser raises ValueError, not NotImplementedError,
+                # for a language with no bundled wordlist
                 _warn_once(f"lang:{slot_type}:{lang}", f"'{slot_type}' slots are not "
                                                        f"supported in '{lang}', the "
                                                        f"type will not be computed")
