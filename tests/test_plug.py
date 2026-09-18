@@ -9,7 +9,7 @@ import ovos_typed_slots_transformer as plug
 from ovos_typed_slots_transformer import TypedSlotsTransformer
 
 LISBON = ZoneInfo("Europe/Lisbon")
-ALL_TYPES = frozenset({"number", "date", "duration", "color"})
+ALL_TYPES = frozenset({"number", "date", "duration", "color", "language"})
 
 
 class StubSession:
@@ -79,6 +79,26 @@ def test_color_entries_carry_hex_and_name():
         int(entry["value"]["hex"][1:], 16)
 
 
+def test_language_entries_carry_code_and_autonym():
+    utterances = ["speak in German please"]
+    slots = transform(utterances, {"language"})
+    assert_invariant(slots, utterances)
+    assert slots["language"] == [{
+        "span": [9, 15], "surface": "German",
+        "value": {"code": "de", "name": "Deutsch"},
+    }]
+
+
+def test_language_name_is_the_primary_subtag_autonym():
+    # §5.6: name is the autonym of the primary subtag, not a regional variant
+    utterances = ["speak Brazilian Portuguese"]
+    slots = transform(utterances, {"language"})
+    assert slots["language"] == [{
+        "span": [6, 26], "surface": "Brazilian Portuguese",
+        "value": {"code": "pt-br", "name": "Português"},
+    }]
+
+
 def test_date_values_are_rfc3339_in_the_session_zone():
     utterances = ["remind me next friday at 5 pm"]
     slots = transform(utterances, {"date"})
@@ -100,7 +120,7 @@ def test_only_declared_types_are_computed(monkeypatch):
 
 
 def test_all_types_config_ignores_the_declared_set():
-    utterances = ["five red balloons in two minutes tomorrow"]
+    utterances = ["five red balloons in two minutes tomorrow, speak German"]
     slots = transform(utterances, frozenset(), config={"all_types": True})
     assert set(slots) == ALL_TYPES
     assert_invariant(slots, utterances)
@@ -171,9 +191,13 @@ def test_the_entry_point_is_discoverable():
     assert plugins["ovos-typed-slots-transformer"] is TypedSlotsTransformer
 
 
-def test_supported_types_are_the_four_registered_types():
+def test_supported_types_are_registered_and_implemented():
     from ovos_spec_tools import REGISTERED_TYPES
-    assert TypedSlotsTransformer.supported_types == frozenset(REGISTERED_TYPES)
+    # location and timezone (§5.6) are registered but not yet computed here
+    # (T-2126: pending a gazetteer/zone-table data source)
+    assert TypedSlotsTransformer.supported_types <= frozenset(REGISTERED_TYPES)
+    assert TypedSlotsTransformer.supported_types == frozenset(
+        {"number", "date", "duration", "color", "language"})
 
 
 def test_priority_comes_from_the_config_section():
