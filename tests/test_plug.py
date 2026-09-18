@@ -9,7 +9,7 @@ import ovos_typed_slots_transformer as plug
 from ovos_typed_slots_transformer import TypedSlotsTransformer
 
 LISBON = ZoneInfo("Europe/Lisbon")
-ALL_TYPES = frozenset({"number", "date", "duration", "color"})
+ALL_TYPES = frozenset({"number", "date", "duration", "color", "language"})
 
 
 class StubSession:
@@ -100,7 +100,7 @@ def test_only_declared_types_are_computed(monkeypatch):
 
 
 def test_all_types_config_ignores_the_declared_set():
-    utterances = ["five red balloons in two minutes tomorrow"]
+    utterances = ["five red balloons in two minutes tomorrow in German"]
     slots = transform(utterances, frozenset(), config={"all_types": True})
     assert set(slots) == ALL_TYPES
     assert_invariant(slots, utterances)
@@ -171,9 +171,41 @@ def test_the_entry_point_is_discoverable():
     assert plugins["ovos-typed-slots-transformer"] is TypedSlotsTransformer
 
 
-def test_supported_types_are_the_four_registered_types():
+def test_supported_types_are_registered_types():
+    """OVOS-INTENT-1 §5.6 registers seven types. OVOS-TRANSFORM-1 §3.7 lets a
+    transformer compute a subset ("a type it does not compute is absent from
+    the map exactly as a type it computed and found nothing for"), and the
+    type set is closed: every type this plugin binds must be registered.
+    `location` and `timezone` have no span-returning OVOS parser yet."""
     from ovos_spec_tools import REGISTERED_TYPES
-    assert TypedSlotsTransformer.supported_types == frozenset(REGISTERED_TYPES)
+    assert TypedSlotsTransformer.supported_types <= frozenset(REGISTERED_TYPES)
+    assert TypedSlotsTransformer.supported_types == ALL_TYPES
+    assert frozenset(REGISTERED_TYPES) - ALL_TYPES <= {"location", "timezone"}
+
+
+def test_language_slots_are_computed():
+    """T-3082: `language` is registered (INTENT-1 §5.6, #266) and
+    ovos-lang-parser 0.8.0a1 ships a span extractor for it, so the plugin
+    binds it. Fails on dev: `language` is not a supported type there."""
+    utterances = ["speak in German please", "fala em japonês"]
+    slots = transform(utterances, {"language"})
+    assert set(slots) == {"language"}
+    assert_invariant(slots, utterances)
+    by_surface = {e["surface"]: e["value"] for e in slots["language"]}
+    assert by_surface["German"] == {"code": "de", "name": "Deutsch"}
+    assert set(by_surface) == {"German"}  # the second candidate is not English
+
+    slots = transform(["fala em japonês"], {"language"},
+                      session=StubSession(lang="pt-PT"))
+    assert slots["language"][0]["surface"] == "japonês"
+    assert slots["language"][0]["value"] == {"code": "ja", "name": "日本語"}
+
+
+def test_a_declared_type_with_no_parser_is_absent(monkeypatch):
+    """A registered type this plugin does not bind is absent from the map,
+    not an error (TRANSFORM-1 §3.7)."""
+    slots = transform(["3 pm EST in Lisbon"], {"timezone", "location", "number"})
+    assert set(slots) == {"number"}
 
 
 def test_priority_comes_from_the_config_section():

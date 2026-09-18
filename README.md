@@ -4,10 +4,14 @@ The reference typed-slots transformer for OVOS. It reads the candidate utterance
 and returns the typed-slots map of OVOS-INTENT-1 §5.6: for each type it was asked
 for, a list of `{"span": [start, end], "surface", "value"}` entries whose offsets
 are half-open code-point positions, so `utterance[start:end] == surface` always
-holds. It computes four types with the OVOS parsers — `number` as a JSON number,
+holds. It computes five types with the OVOS parsers — `number` as a JSON number,
 `date` as (an RFC 3339 timestamp in the session's zone, taken from `location.tz` and
-falling back to the deployment zone), `duration` (seconds) and `color` (a
-`{"hex": "#rrggbb", "name"}` pair). It never touches the utterances or the
+falling back to the deployment zone), `duration` (seconds), `color` (a
+`{"hex": "#rrggbb", "name"}` pair) and `language` (a `{"code", "name"}` pair, the
+BCP-47 tag and the autonym). OVOS-INTENT-1 §5.6 registers two more types,
+`location` and `timezone`, that no OVOS parser extracts with spans yet. This plugin
+does not bind them, and they are absent from the map the same way a type with no
+match is (OVOS-TRANSFORM-1 §3.7). It never touches the utterances or the
 message context, and every map it returns is checked against the spec before it
 leaves the plugin. A type whose entries fail validation is logged and dropped
 rather than raised.
@@ -21,8 +25,8 @@ only types with at least one entry, never an empty list: a key is present exactl
 when extraction produced something. A type is therefore absent whether its parser
 found no such expression, is not installed, does not cover the session language,
 or raised, and a consumer reads absence as "no slots of this type" without having
-to distinguish those cases. All three parsers are hard dependencies, so a normal
-install can compute all four types, and the lazy per-type imports only matter to
+to distinguish those cases. All four parsers are hard dependencies, so a normal
+install can compute all five types, and the lazy per-type imports only matter to
 someone who has pruned one of them out.
 
 Language coverage is the parser's, not the plugin's. The number parser refuses a
@@ -46,7 +50,7 @@ Under `typed_slots_transformers` in `mycroft.conf`:
 }
 ```
 
-`all_types` computes all four supported types regardless of what the intents
+`all_types` computes all five supported types regardless of what the intents
 declared, which is useful when something downstream of intent matching wants the
 slots. It costs time on every utterance and is off by default.
 
@@ -56,5 +60,5 @@ Extraction is per type and per candidate utterance, so the price is the sum of
 the declared types times the number of candidates. On a ten-word English sentence
 the date and duration parsers dominate at roughly 8 ms each, numbers cost under
 2 ms, and colours are effectively free at well under a millisecond. Asking for all
-four costs under 20 ms. Declaring only the types an intent actually needs is the
+four of those costs under 20 ms. `language` was not in that measurement. Declaring only the types an intent actually needs is the
 cheapest thing a skill can do here.

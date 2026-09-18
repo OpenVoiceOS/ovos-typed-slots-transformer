@@ -42,9 +42,21 @@ def _colors(utterance: str, lang: str) -> List[Dict[str, Any]]:
             for s in extract_color_spans(utterance, lang)]
 
 
-#: parser call per supported type; `date` is bound to the anchor per transform
+def _languages(utterance: str, lang: str) -> List[Dict[str, Any]]:
+    from ovos_lang_parser import extract_language
+    # already §5.6-shaped: span, surface, value {code, name}
+    return [_entry(e["span"][0], e["span"][1], e["surface"], e["value"])
+            for e in extract_language(utterance, lang)]
+
+
+#: parser call per supported type; `date` is bound to the anchor per transform.
+#: OVOS-INTENT-1 §5.6 registers seven types; `location` and `timezone` have
+#: no span-returning OVOS parser yet, so this transformer does not bind them.
+#: OVOS-TRANSFORM-1 §3.7: a type a transformer does not compute is absent
+#: from the map exactly as a type it computed and found nothing for.
 _EXTRACTORS = {"number": _numbers, "date": _dates,
-               "duration": _durations, "color": _colors}
+               "duration": _durations, "color": _colors,
+               "language": _languages}
 
 
 def _warn_once(key: str, message: str):
@@ -54,8 +66,8 @@ def _warn_once(key: str, message: str):
 
 
 class TypedSlotsTransformer(_TypedSlotsTransformer):
-    """Computes `number`, `date`, `duration` and `color` slots with the OVOS
-    parsers, over every candidate utterance it is handed.
+    """Computes `number`, `date`, `duration`, `color` and `language` slots
+    with the OVOS parsers, over every candidate utterance it is handed.
 
     The spans of an entry index the candidate it was read from; a consumer
     identifies that candidate by the `utterance[start:end] == surface`
@@ -66,7 +78,7 @@ class TypedSlotsTransformer(_TypedSlotsTransformer):
     is not installed, does not support the session language, or raised.
     """
 
-    supported_types: FrozenSet[str] = frozenset({"number", "date", "duration", "color"})
+    supported_types: FrozenSet[str] = frozenset(_EXTRACTORS)
 
     def __init__(self, name: str = "ovos-typed-slots-transformer",
                  priority: int = 50, config: Optional[Dict[str, Any]] = None):
