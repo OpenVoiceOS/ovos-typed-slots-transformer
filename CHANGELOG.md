@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.1a3](https://github.com/OpenVoiceOS/ovos-typed-slots-transformer/tree/0.0.1a3) (2026-09-06)
+
+[Full Changelog](https://github.com/OpenVoiceOS/ovos-typed-slots-transformer/compare/0.0.1a2...0.0.1a3)
+
 ## [0.0.1a2](https://github.com/OpenVoiceOS/ovos-typed-slots-transformer/tree/0.0.1a2) (2026-09-06)
 
 [Full Changelog](https://github.com/OpenVoiceOS/ovos-typed-slots-transformer/compare/cfbb478b291c722984ede15e3c14430d81cf635f...0.0.1a2)
