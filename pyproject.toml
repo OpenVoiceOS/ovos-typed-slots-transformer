@@ -7,7 +7,7 @@ name = "ovos-typed-slots-transformer"
 dynamic = ["version"]
 description = "Typed-slots transformer computing number, date, duration and color slots with the OVOS parsers"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     {name = "jarbasai", email = "jarbasai@mailfence.com"}
 ]
@@ -16,7 +16,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: Text Processing :: Linguistic",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13"
@@ -24,7 +23,7 @@ classifiers = [
 dependencies = [
     "ovos-plugin-manager>=2.12.0a1",
     "ovos-spec-tools>=1.11.0a1",
-    "ovos-number-parser>=0.20.0a1",
+    "numtag>=0.7.1a1",
     "ovos-date-parser>=0.31.0a1",
     "ovos-color-parser>=0.12.1a1",
     "ovos-lang-parser>=0.8.0a1"

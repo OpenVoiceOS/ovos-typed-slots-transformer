@@ -60,6 +60,28 @@ def test_number_entries_carry_a_json_number():
     assert all(isinstance(v, (int, float)) for v in values)
 
 
+@pytest.mark.parametrize("lang, utterance, expected", [
+    ("en-US", "the twenty first floor", [("twenty first", 21)]),
+    ("en-US", "add a third of a cup", [("a third", 1 / 3)]),
+    ("en-US", "open the second and the fifth tab", [("second", 2), ("fifth", 5)]),
+    ("pt-PT", "põe o volume a vinte e cinco por cento", [("vinte e cinco", 25)]),
+    ("pt-PT", "vinte e um e vinte", [("vinte e um", 21), ("vinte", 20)]),
+    ("pt-PT", "conta-me uma curiosidade sobre o número sete", [("sete", 7)]),
+    ("pt-PT", "o vigésimo primeiro andar", [("vigésimo primeiro", 21)]),
+    ("pt-PT", "abre o segundo e o quinto separador", [("segundo", 2), ("quinto", 5)]),
+])
+def test_each_number_in_the_utterance_is_one_entry(lang, utterance, expected):
+    slots = transform([utterance], {"number"}, session=StubSession(lang=lang))
+    gold, start = [], 0
+    for surface, value in expected:
+        start = utterance.index(surface, start)
+        gold.append({"span": [start, start + len(surface)], "surface": surface,
+                     "value": value})
+        start += len(surface)
+    assert slots["number"] == gold
+    assert [type(e["value"]) for e in slots["number"]] == [type(v) for _, v in expected]
+
+
 def test_duration_entries_are_seconds():
     utterances = ["set a timer for two hours and thirty minutes"]
     slots = transform(utterances, {"duration"})

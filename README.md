@@ -25,8 +25,13 @@ to distinguish those cases. All three parsers are hard dependencies, so a normal
 install can compute all four types, and the lazy per-type imports only matter to
 someone who has pruned one of them out.
 
-Language coverage is the parser's, not the plugin's. The number parser refuses a
-language it does not implement, so nothing is written for `number` under one. The
+Numbers come from numtag. Each number in a candidate gives one entry, so "twenty
+one and twenty" gives 21 and 20. A whole value is a JSON integer, and a decimal or a
+fraction ("a third") is a JSON float. An article alone before its noun, such as "uma"
+in "uma casa", is not written as a number.
+
+Language coverage is the parser's, not the plugin's. numtag refuses a language it
+has no lexicon for, so nothing is written for `number` under one. The
 date parser instead answers any language by falling back to an English-driven
 parser, so its results for an uncovered language are only as good as that
 fallback.
