@@ -9,7 +9,7 @@ OVOS-INTENT-1 §5.6 `typed_slots` map for `number`, `date`, `duration` and
 uv pip install -e .
 ```
 Runtime deps: `ovos-plugin-manager`, `ovos-spec-tools`, and the three parsers
-(`ovos-number-parser`, `ovos-date-parser`, `ovos-color-parser`), all hard. The
+(`numtag`, `ovos-date-parser`, `ovos-color-parser`), all hard. The
 lazy per-type imports are a robustness measure for pruned installs, not an
 optional-extras scheme.
 

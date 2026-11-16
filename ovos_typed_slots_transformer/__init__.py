@@ -1,5 +1,6 @@
 """Typed-slots transformer over the OVOS parsers (OVOS-TRANSFORM-1 §3.7)."""
 from datetime import datetime, tzinfo
+from fractions import Fraction
 from functools import partial
 from typing import Any, Callable, Dict, FrozenSet, List, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -18,10 +19,17 @@ def _entry(start: int, end: int, surface: str, value: Any) -> Dict[str, Any]:
     return {"span": [start, end], "surface": surface, "value": value}
 
 
+def _json_number(value: str) -> int | float:
+    number = Fraction(value)
+    return int(number) if number.denominator == 1 else float(number)
+
+
 def _numbers(utterance: str, lang: str) -> List[Dict[str, Any]]:
-    from ovos_number_parser import extract_number_spans
-    return [_entry(s.start, s.end, s.surface, s.value)
-            for s in extract_number_spans(utterance, lang)]
+    from numtag import Reason, tag_numbers
+    # a lone article before its noun ("uma casa") is no number
+    return [_entry(*m.char_span, m.text, _json_number(m.value))
+            for m in tag_numbers(utterance, lang)
+            if Reason.ARTICLE not in m.reasons]
 
 
 def _dates(utterance: str, lang: str, anchor: datetime) -> List[Dict[str, Any]]:
