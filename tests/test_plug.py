@@ -67,6 +67,7 @@ def test_number_entries_carry_a_json_number():
     ("pt-PT", "põe o volume a vinte e cinco por cento", [("vinte e cinco", 25)]),
     ("pt-PT", "vinte e um e vinte", [("vinte e um", 21), ("vinte", 20)]),
     ("pt-PT", "conta-me uma curiosidade sobre o número sete", [("sete", 7)]),
+    ("pt-PT", "Dá-me um segundo facto.", [("segundo", 2)]),
     ("pt-PT", "o vigésimo primeiro andar", [("vigésimo primeiro", 21)]),
     ("pt-PT", "abre o segundo e o quinto separador", [("segundo", 2), ("quinto", 5)]),
 ])

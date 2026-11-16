@@ -25,12 +25,11 @@ def _json_number(value: str) -> int | float:
 
 
 def _numbers(utterance: str, lang: str) -> List[Dict[str, Any]]:
-    from numtag import tag_numbers
-    from numtag.tagger import ARTICLE_CONFIDENCE
+    from numtag import Reason, tag_numbers
     # a lone article before its noun ("uma casa") is no number
     return [_entry(*m.char_span, m.text, _json_number(m.value))
             for m in tag_numbers(utterance, lang)
-            if m.confidence > ARTICLE_CONFIDENCE]
+            if Reason.ARTICLE not in m.reasons]
 
 
 def _dates(utterance: str, lang: str, anchor: datetime) -> List[Dict[str, Any]]:
