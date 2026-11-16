@@ -63,13 +63,11 @@ def test_number_entries_carry_a_json_number():
 @pytest.mark.parametrize("lang, utterance, expected", [
     ("en-US", "the twenty first floor", [("twenty first", 21)]),
     ("en-US", "add a third of a cup", [("a third", 1 / 3)]),
-    ("en-US", "open the second and the fifth tab", [("second", 2), ("fifth", 5)]),
+    ("en-US", "open the second and the fifth tab", [("fifth", 5)]),
     ("pt-PT", "põe o volume a vinte e cinco por cento", [("vinte e cinco", 25)]),
     ("pt-PT", "vinte e um e vinte", [("vinte e um", 21), ("vinte", 20)]),
     ("pt-PT", "conta-me uma curiosidade sobre o número sete", [("sete", 7)]),
-    ("pt-PT", "Dá-me um segundo facto.", [("segundo", 2)]),
     ("pt-PT", "o vigésimo primeiro andar", [("vigésimo primeiro", 21)]),
-    ("pt-PT", "abre o segundo e o quinto separador", [("segundo", 2), ("quinto", 5)]),
 ])
 def test_each_number_in_the_utterance_is_one_entry(lang, utterance, expected):
     slots = transform([utterance], {"number"}, session=StubSession(lang=lang))
@@ -292,3 +290,26 @@ def test_construction_returns_an_empty_map_without_the_validator(monkeypatch):
     for slot_type in ALL_TYPES:
         monkeypatch.setitem(plug._EXTRACTORS, slot_type, lambda *args, **kwargs: [])
     assert transform(["nine red balloons"], ALL_TYPES) == {}
+
+
+@pytest.mark.parametrize("lang, utterance, surfaces", [
+    ("en-US", "mute it for a second", []),
+    ("en-US", "half past seven", ["seven"]),
+    ("ca-ES", "un nou enregistrament", []),
+    ("ca-ES", "un nou temporitzador", []),
+    ("pt-PT", "Dá-me um segundo facto.", []),
+    ("pt-PT", "abre o segundo e o quinto separador", []),
+])
+def test_a_homograph_gives_no_typed_number(lang, utterance, surfaces):
+    slots = transform([utterance], {"number"}, session=StubSession(lang=lang))
+    assert [e["surface"] for e in slots.get("number", [])] == surfaces
+
+
+@pytest.mark.parametrize("lang, utterance, value", [
+    ("en-US", "set a timer for twenty minutes", 20),
+    ("en-US", "add a third of a cup", 1 / 3),
+    ("pt-PT", "vinte e um", 21),
+])
+def test_a_clear_number_keeps_its_typed_value(lang, utterance, value):
+    slots = transform([utterance], {"number"}, session=StubSession(lang=lang))
+    assert [e["value"] for e in slots["number"]] == [value]

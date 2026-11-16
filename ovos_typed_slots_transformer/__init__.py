@@ -26,10 +26,10 @@ def _json_number(value: str) -> int | float:
 
 def _numbers(utterance: str, lang: str) -> List[Dict[str, Any]]:
     from numtag import Reason, tag_numbers
-    # a lone article before its noun ("uma casa") is no number
+    # an article ("uma casa") or a homograph ("a second") is no number
     return [_entry(*m.char_span, m.text, _json_number(m.value))
             for m in tag_numbers(utterance, lang)
-            if Reason.ARTICLE not in m.reasons]
+            if {Reason.ARTICLE, Reason.HOMOGRAPH}.isdisjoint(m.reasons)]
 
 
 def _dates(utterance: str, lang: str, anchor: datetime) -> List[Dict[str, Any]]:
