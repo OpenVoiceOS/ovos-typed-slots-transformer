@@ -33,9 +33,19 @@ def _numbers(utterance: str, lang: str) -> List[Dict[str, Any]]:
 
 
 def _dates(utterance: str, lang: str, anchor: datetime) -> List[Dict[str, Any]]:
-    from ovos_date_parser import extract_datetime_spans
-    return [_entry(s.start, s.end, s.surface, s.value.isoformat())
-            for s in extract_datetime_spans(utterance, lang, anchor_date=anchor)]
+    from chronologia import extract_timespans
+    entries = []
+    for mention in extract_timespans(utterance, lang, anchor):
+        # the start of the named time is its instant ("tomorrow" is its
+        # midnight); a mention with no offsets or no datetime has no entry
+        start = mention.span.start_datetime
+        if mention.char_span is None or start is None:
+            continue
+        begin, end = mention.char_span
+        # chronologia answers in the anchor's wall clock without a zone
+        value = start.replace(tzinfo=anchor.tzinfo).isoformat()
+        entries.append(_entry(begin, end, utterance[begin:end], value))
+    return entries
 
 
 def _durations(utterance: str, lang: str) -> List[Dict[str, Any]]:

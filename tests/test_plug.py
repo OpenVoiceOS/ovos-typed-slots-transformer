@@ -132,6 +132,53 @@ def test_date_values_are_rfc3339_in_the_session_zone():
         assert value.utcoffset() == LISBON.utcoffset(value.replace(tzinfo=None))
 
 
+#: a Tuesday in summer time; Lisbon is UTC+1 from late March to late October
+ANCHOR = datetime(2017, 6, 27, 13, 4, tzinfo=LISBON)
+
+
+@pytest.fixture
+def frozen_now(monkeypatch):
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return ANCHOR.astimezone(tz)
+
+    monkeypatch.setattr(plug, "datetime", Frozen)
+
+
+@pytest.mark.parametrize("lang, utterance, value", [
+    # the surfaces ovos-m2v-pipeline writes into {date:...} slots with
+    # nice_date; the value is the date nice_date was given, at the midnight
+    # that starts it in Lisbon (UTC+0 in March, UTC+1 in July)
+    ("en-US", "friday, march fifteenth, twenty twenty four", "2024-03-15T00:00:00+00:00"),
+    ("en-US", "thursday, july fourth, twenty twenty four", "2024-07-04T00:00:00+01:00"),
+    ("de-DE", "Freitag, fünfzehnter März, zweitausendvierundzwanzig",
+     "2024-03-15T00:00:00+00:00"),
+    # a year names the year, which starts on 1 January
+    ("en-US", "2022", "2022-01-01T00:00:00+00:00"),
+])
+def test_a_spoken_date_is_one_entry_with_its_own_value(frozen_now, lang, utterance, value):
+    slots = transform([utterance], {"date"}, session=StubSession(lang=lang))
+    assert slots["date"] == [{"span": [0, len(utterance)], "surface": utterance,
+                              "value": value}]
+
+
+def test_a_weekend_is_its_saturday_and_a_count_is_no_date(frozen_now):
+    # 2017-06-27 is a Tuesday, so this weekend starts on Saturday 1 July
+    utterance = "nine red balloons this weekend"
+    slots = transform([utterance], {"date"})
+    assert slots["date"] == [{"span": [18, 30], "surface": "this weekend",
+                              "value": "2017-07-01T00:00:00+01:00"}]
+
+
+@pytest.mark.xfail(strict=True, reason="chronologia reads no mention here: "
+                                       "TigreGotico/chronologia#992")
+def test_tomorrow_after_a_counted_offset_is_read(frozen_now):
+    utterance = "five red balloons in two minutes tomorrow, speak German"
+    slots = transform([utterance], {"date"})
+    assert "tomorrow" in [entry["surface"] for entry in slots.get("date", [])]
+
+
 def test_only_declared_types_are_computed(monkeypatch):
     def boom(*args, **kwargs):
         raise AssertionError("undeclared type was computed")
@@ -143,7 +190,7 @@ def test_only_declared_types_are_computed(monkeypatch):
 
 
 def test_all_types_config_ignores_the_declared_set():
-    utterances = ["five red balloons in two minutes tomorrow, speak German"]
+    utterances = ["five red balloons tomorrow for two minutes, speak German"]
     slots = transform(utterances, frozenset(), config={"all_types": True})
     assert set(slots) == ALL_TYPES
     assert_invariant(slots, utterances)

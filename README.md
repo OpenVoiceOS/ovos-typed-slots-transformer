@@ -21,7 +21,7 @@ only types with at least one entry, never an empty list: a key is present exactl
 when extraction produced something. A type is therefore absent whether its parser
 found no such expression, is not installed, does not cover the session language,
 or raised, and a consumer reads absence as "no slots of this type" without having
-to distinguish those cases. All three parsers are hard dependencies, so a normal
+to distinguish those cases. All the parsers are hard dependencies, so a normal
 install can compute all four types, and the lazy per-type imports only matter to
 someone who has pruned one of them out.
 
@@ -30,11 +30,17 @@ one and twenty" gives 21 and 20. A whole value is a JSON integer, and a decimal 
 fraction ("a third") is a JSON float. An article alone before its noun, such as "uma"
 in "uma casa", is not written as a number.
 
-Language coverage is the parser's, not the plugin's. numtag refuses a language it
-has no lexicon for, so nothing is written for `number` under one. The
-date parser instead answers any language by falling back to an English-driven
-parser, so its results for an uncovered language are only as good as that
-fallback.
+Dates come from chronologia. Each date or time in a candidate gives one entry, whose
+span is the mention chronologia reports. The value is the moment the named time
+starts, in the session's zone: "tomorrow" is its midnight, "this weekend" its
+Saturday, "2022" the first of January. Durations come from ovos-date-parser,
+because chronologia gives the length of a duration but not its span.
+
+Language coverage is the parser's, not the plugin's. numtag and chronologia refuse
+a language they have no data for, so nothing is written for `number` or `date`
+under one. The duration parser instead answers any language by falling back to an
+English-driven parser, so its results for an uncovered language are only as good
+as that fallback.
 
 ## Configuration
 
