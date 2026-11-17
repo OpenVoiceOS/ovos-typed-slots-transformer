@@ -83,6 +83,9 @@ def test_each_number_in_the_utterance_is_one_entry(lang, utterance, expected):
     assert [type(e["value"]) for e in slots["number"]] == [type(v) for _, v in expected]
 
 
+@pytest.mark.xfail(strict=True, reason="https://github.com/TigreGotico/chronologia/issues/998: "
+                                       "legacy extract_duration_spans returns overlapping spans; "
+                                       "durations move to chronologia")
 def test_duration_entries_are_seconds():
     utterances = ["set a timer for two hours and thirty minutes"]
     slots = transform(utterances, {"duration"})
